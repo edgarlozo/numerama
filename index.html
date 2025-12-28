@@ -12,7 +12,7 @@
         
         .stats-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; border: 2px solid #000; padding: 5px 10px; }
 
-        #grid { display: grid; grid-template-columns: repeat(9, 1fr); border: 3px solid #000; width: 100%; background-color: #000; overflow: hidden; }
+        #grid { display: grid; grid-template-columns: repeat(9, 1fr); border: 3px solid #000; width: 100%; background-color: #000; overflow: hidden; min-height: 50px; }
         #grid.no-grid { grid-template-columns: repeat(3, 1fr) !important; grid-template-rows: repeat(3, 1fr) !important; aspect-ratio: 1 / 1; gap: 3px; }
         
         .cell { background: #fff; width: 100%; aspect-ratio: 1 / 1; border: 0.5px solid #ccc; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; transition: 0.2s; }
@@ -28,7 +28,7 @@
         button:hover { background-color: #e0e0e0; }
 
         #end-btn { background-color: #ffeded; color: #cc0000; transition: all 0.3s; }
-        #end-btn.confirming { background-color: #ff0000 !important; color: #ffffff !important; font-size: 0.7rem; }
+        #end-btn.confirming { background-color: #ff0000 !important; color: #ffffff !important; font-size: 0.75rem; padding: 15px 5px; }
 
         /* Popup */
         #game-over-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:100; }
@@ -75,7 +75,7 @@
             <p>Puntuación Final:</p>
             <h1 id="final-score" style="margin:10px 0; color:#0073aa;">0</h1>
             <input type="text" id="player-name" placeholder="TU NOMBRE" maxlength="12">
-            <button id="save-btn" onclick="sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR Y SALIR</button>
+            <button onclick="sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR Y SALIR</button>
         </div>
     </div>
 
@@ -83,7 +83,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
-        // CONFIGURACIÓN CORREGIDA CON databaseURL
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
             authDomain: "pengu-games.firebaseapp.com",
@@ -102,9 +101,10 @@
         let isConfirmingEnd = false;
         const COLS = 9;
 
-        // --- Funciones Globales para HTML ---
+        // --- Exportar funciones al alcance global ---
         window.showLevelSelection = function() {
             const grid = document.getElementById('grid');
+            if(!grid) return;
             grid.innerHTML = ''; grid.classList.add('no-grid');
             document.getElementById('game-title').innerText = "Pengu Numerama";
             document.getElementById('add-btn').classList.add('hidden-element');
@@ -121,5 +121,201 @@
             }
         };
 
-        function startLevel(lv) {
-            document
+        window.startLevel = function(lv) {
+            document.getElementById('grid').classList.remove('no-grid');
+            document.getElementById('add-btn').classList.remove('hidden-element');
+            document.getElementById('end-btn').classList.remove('hidden-element');
+            document.getElementById('stats').classList.remove('hidden-element');
+            numbers = []; totalScore = 0; addRowsRemaining = 10;
+            updateUI();
+            for (let i = 0; i < 18 + (lv * 9); i++) {
+                numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
+            }
+            renderGame();
+        };
+
+        function renderGame() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            checkFullRows();
+
+            numbers.forEach((num, index) => {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                if (num.status === 'cleared') div.classList.add('cleared');
+                if (selectedIndex === index) div.classList.add('selected');
+                div.textContent = num.val;
+                div.onclick = () => handleSelect(index);
+                grid.appendChild(div);
+            });
+
+            const fill = (COLS - (numbers.length % COLS)) % COLS;
+            for (let i = 0; i < fill; i++) {
+                const f = document.createElement('div');
+                f.className = 'cell empty-filler'; f.textContent = "\u00A0";
+                grid.appendChild(f);
+            }
+            checkEndGame();
+        }
+
+        function checkFullRows() {
+            for (let i = 0; i < numbers.length; i += COLS) {
+                let row = numbers.slice(i, i + COLS);
+                if (row.length === COLS && row.every(n => n.status === 'cleared')) {
+                    numbers.splice(i, COLS);
+                    totalScore += 9;
+                    updateUI();
+                    i -= COLS;
+                }
+            }
+        }
+
+        function handleSelect(i) {
+            if (numbers[i].status === 'cleared') return;
+            resetEndButton();
+            if (selectedIndex === null) selectedIndex = i;
+            else if (selectedIndex === i) selectedIndex = null;
+            else {
+                const res = getMatchRes(selectedIndex, i);
+                if (res.isPossible) {
+                    totalScore += (numbers[selectedIndex].val + numbers[i].val) * res.multiplier;
+                    numbers[selectedIndex].status = 'cleared';
+                    numbers[i].status = 'cleared';
+                    selectedIndex = null;
+                    updateUI();
+                } else { selectedIndex = i; }
+            }
+            renderGame();
+        }
+
+        function getMatchRes(idx1, idx2) {
+            const v1 = numbers[idx1].val, v2 = numbers[idx2].val;
+            if (v1 === v2 || v1 + v2 === 10) {
+                const path = getPathInfo(idx1, idx2);
+                if (path.clear) return { isPossible: true, multiplier: Math.max(1, path.clearedCount) };
+            }
+            return { isPossible: false };
+        }
+
+        function getPathInfo(idx1, idx2) {
+            const start = Math.min(idx1, idx2), end = Math.max(idx1, idx2);
+            const r1 = Math.floor(idx1/COLS), c1 = idx1%COLS;
+            const r2 = Math.floor(idx2/COLS), c2 = idx2%COLS;
+            let clearedCount = 0;
+
+            let snakeClear = true;
+            for(let i=start+1; i<end; i++) {
+                if(numbers[i].status === 'active') { snakeClear = false; break; }
+                clearedCount++;
+            }
+            if(snakeClear) return { clear: true, clearedCount };
+
+            clearedCount = 0;
+            if(c1 === c2) {
+                for(let i=start+COLS; i<end; i+=COLS) {
+                    if(numbers[i].status === 'active') return { clear: false };
+                    clearedCount++;
+                }
+                return { clear: true, clearedCount };
+            }
+
+            clearedCount = 0;
+            if(Math.abs(r1-r2) === Math.abs(c1-c2)) {
+                const step = (r2 > r1 ? COLS : -COLS) + (c2 > c1 ? 1 : -1);
+                for(let i=idx1+step; i !== idx2; i+=step) {
+                    if(numbers[i].status === 'active') return { clear: false };
+                    clearedCount++;
+                }
+                return { clear: true, clearedCount };
+            }
+            return { clear: false };
+        }
+
+        window.addNumbers = function() {
+            if (addRowsRemaining <= 0) return;
+            resetEndButton();
+            const active = numbers.filter(n => n.status === 'active');
+            if (active.length === 0) return;
+            numbers = [...numbers, ...active.map(n => ({ val: n.val, status: 'active' }))];
+            addRowsRemaining--;
+            updateUI();
+            renderGame();
+        };
+
+        function updateUI() {
+            document.getElementById('score-val').innerText = totalScore;
+            document.getElementById('adds-val').innerText = addRowsRemaining;
+        }
+
+        function checkEndGame() {
+            const anyActive = numbers.some(n => n.status === 'active');
+            if (!anyActive && numbers.length > 0) { triggerGameOver(); return; }
+            if (addRowsRemaining === 0 && !hasPossibleMoves()) triggerGameOver();
+        }
+
+        function hasPossibleMoves() {
+            const actives = [];
+            numbers.forEach((n, i) => { if(n.status === 'active') actives.push(i); });
+            for(let i=0; i<actives.length; i++) {
+                for(let j=i+1; j<actives.length; j++) {
+                    if(getMatchRes(actives[i], actives[j]).isPossible) return true;
+                }
+            }
+            return false;
+        }
+
+        window.handleEndClick = function() {
+            const btn = document.getElementById('end-btn');
+            if (!isConfirmingEnd) {
+                isConfirmingEnd = true;
+                btn.classList.add('confirming');
+                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
+            } else {
+                triggerGameOver();
+            }
+        };
+
+        function resetEndButton() {
+            isConfirmingEnd = false;
+            const btn = document.getElementById('end-btn');
+            if(btn) {
+                btn.classList.remove('confirming');
+                btn.innerText = "TERMINAR JUEGO";
+            }
+        }
+
+        function triggerGameOver() {
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('game-over-overlay').style.display = 'flex';
+        }
+
+        window.sendToFirebase = function() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            const name = nameInput || "ANÓNIMO";
+            
+            push(ref(db, 'numerama/ranking'), {
+                nombre: name.toUpperCase(),
+                puntos: totalScore,
+                fecha: Date.now()
+            }).then(() => {
+                window.showLevelSelection();
+            }).catch((err) => {
+                console.error("Error Firebase:", err);
+                window.showLevelSelection();
+            });
+        };
+
+        onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
+            const list = document.getElementById('scores-list'); list.innerHTML = '';
+            const data = []; 
+            snap.forEach(c => data.push(c.val()));
+            data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
+
+        // Inicio automático al cargar el script
+        window.showLevelSelection();
+    </script>
+</body>
+</html>
