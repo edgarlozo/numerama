@@ -27,24 +27,23 @@
             overflow: hidden;
         }
 
-        /* Estilo para la selección de niveles */
         #grid.no-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             grid-template-rows: repeat(3, 1fr) !important;
-            aspect-ratio: 1 / 1; /* */
+            aspect-ratio: 1 / 1; 
             background-color: #000 !important; 
             gap: 3px; /* */
         }
 
         .level-pick {
-            background: #fff; /* */
+            background: #fff; 
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 3rem !important; /* */
-            font-weight: bold; /* */
+            font-weight: bold; 
             color: #000; 
             cursor: pointer;
             border: none;
@@ -66,19 +65,19 @@
 
         /* Colores de estado sincronizados */
         .cell.selected { background-color: #e3e8ff; color: #0073aa; }
-        .cell.cleared { 
+        .cell.cleared, .cell.empty-filler { 
             background-color: #f0f0f0 !important; /* */
             color: #ccc !important; 
-            text-decoration: line-through; 
             pointer-events: none; 
         }
+        .cell.cleared { text-decoration: line-through; }
 
-        /* Botones idénticos a las imágenes */
+        /* Botones estilo Sudoku */
         .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
         .controls button { 
             padding: 10px 15px; 
             cursor: pointer; 
-            font-weight: bold; /* */
+            font-weight: bold; 
             border: none; 
             border-radius: 5px; /* */
             background-color: #f0f0f0; /* */
@@ -133,7 +132,6 @@
             document.getElementById('add-btn').classList.remove('hidden-element');
             
             numbers = [];
-            // Empezar con filas según nivel
             let initialCount = 18 + (lv * 9); 
             for (let i = 0; i < initialCount; i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
@@ -144,6 +142,8 @@
         function renderGame() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
+
+            // 1. Dibujar los números reales
             numbers.forEach((num, index) => {
                 const div = document.createElement('div');
                 div.className = 'cell';
@@ -154,6 +154,16 @@
                 div.onclick = () => handleSelect(index);
                 grid.appendChild(div);
             });
+
+            // 2. Dibujar celdas vacías (fillers) para completar la última fila
+            const remainingSpots = (COLS - (numbers.length % COLS)) % COLS;
+            for (let i = 0; i < remainingSpots; i++) {
+                const filler = document.createElement('div');
+                filler.className = 'cell empty-filler';
+                filler.textContent = "\u00A0"; // Espacio en blanco
+                grid.appendChild(filler);
+            }
+            
             checkWin();
         }
 
@@ -181,8 +191,6 @@
         function isMatchPossible(idx1, idx2) {
             const v1 = numbers[idx1].val;
             const v2 = numbers[idx2].val;
-
-            // Regla: Iguales o suman 10
             if (v1 === v2 || v1 + v2 === 10) {
                 return checkPath(idx1, idx2);
             }
@@ -195,48 +203,38 @@
             const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
             const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
 
-            // 1. Camino de "Serpiente" (Consecutivos ignorando vacíos)
+            // Horizontal / Serpiente
             let snakeClear = true;
             for (let i = start + 1; i < end; i++) {
-                if (numbers[i].status === 'active') {
-                    snakeClear = false;
-                    break;
-                }
+                if (numbers[i].status === 'active') { snakeClear = false; break; }
             }
             if (snakeClear) return true;
 
-            // 2. Camino Vertical
+            // Vertical
             if (c1 === c2) {
                 let verticalClear = true;
                 for (let i = start + COLS; i < end; i += COLS) {
-                    if (numbers[i].status === 'active') {
-                        verticalClear = false;
-                        break;
-                    }
+                    if (numbers[i].status === 'active') { verticalClear = false; break; }
                 }
                 if (verticalClear) return true;
             }
 
-            // 3. Camino Diagonal
+            // Diagonal
             if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
                 let diagonalClear = true;
                 const rowDir = r2 > r1 ? 1 : -1;
                 const colDir = c2 > c1 ? 1 : -1;
                 const step = (rowDir * COLS) + colDir;
-
                 for (let i = idx1 + step; i !== idx2; i += step) {
-                    if (numbers[i].status === 'active') {
-                        diagonalClear = false;
-                        break;
-                    }
+                    if (numbers[i].status === 'active') { diagonalClear = false; break; }
                 }
                 if (diagonalClear) return true;
             }
-
             return false;
         }
 
         function addNumbers() {
+            // Regla clásica: Duplicar solo los activos
             const activeNums = numbers.filter(n => n.status === 'active');
             if (activeNums.length === 0) return;
             numbers = [...numbers, ...activeNums.map(n => ({ val: n.val, status: 'active' }))];
@@ -244,7 +242,7 @@
         }
 
         function checkWin() {
-            if (numbers.length > 0 && numbers.every(n => n.status === 'cleared')) {
+            if (numbers.length > 0 && numbers.every(n => n.status === 'active' === false)) {
                 document.getElementById('message').innerText = "¡TABLERO COMPLETADO!";
                 document.getElementById('message').style.color = "green";
             }
