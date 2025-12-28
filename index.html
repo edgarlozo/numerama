@@ -3,90 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengu Numerama</title>
+    <title>Pengu Numerama PRO</title>
     <style>
-        /* --- ESTILOS CLONADOS DE PENGU SUDOKU --- */
         * { box-sizing: border-box; }
-        body { 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            min-height: 100vh; 
-            margin: 0; 
-            padding-top: 20px;
-            background-color: #ffffff; /* */
-        }
-        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; } /* */
+        body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 20px; background-color: #ffffff; font-family: 'Segoe UI', sans-serif; }
+        #game-container { text-align: center; max-width: 380px; width: 100%; }
+        
+        /* Stats Bar */
+        .stats-bar { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; border: 2px solid #000; padding: 5px 10px; }
 
-        #grid { 
-            display: grid; 
-            grid-template-columns: repeat(9, 1fr); 
-            border: 3px solid #000; /* */
-            width: 100%; 
-            background-color: #000; /* */
-            overflow: hidden;
-        }
-
-        #grid.no-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-            grid-template-rows: repeat(3, 1fr) !important;
-            aspect-ratio: 1 / 1; 
-            background-color: #000 !important; 
-            gap: 3px; /* */
-        }
-
-        .level-pick {
-            background: #fff; 
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 3rem !important; /* */
-            font-weight: bold; 
-            color: #000; 
-            cursor: pointer;
-            border: none;
-        }
-        .level-pick:hover { background-color: #e3e8ff; } /* */
-
-        .cell {
-            background: #fff; 
-            width: 100%; 
-            aspect-ratio: 1 / 1; 
-            border: 0.5px solid #ccc; /* */
-            font-size: 1.2rem; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        /* Colores de estado sincronizados */
-        .cell.selected { background-color: #e3e8ff; color: #0073aa; }
-        .cell.cleared, .cell.empty-filler { 
-            background-color: #f0f0f0 !important; /* */
-            color: #ccc !important; 
-            pointer-events: none; 
-        }
+        #grid { display: grid; grid-template-columns: repeat(9, 1fr); border: 3px solid #000; width: 100%; background-color: #000; overflow: hidden; }
+        #grid.no-grid { grid-template-columns: repeat(3, 1fr) !important; grid-template-rows: repeat(3, 1fr) !important; aspect-ratio: 1 / 1; gap: 3px; }
+        
+        .cell { background: #fff; width: 100%; aspect-ratio: 1 / 1; border: 0.5px solid #ccc; font-size: 1.2rem; display: flex; justify-content: center; align-items: center; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .level-pick { background: #fff; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 3rem !important; font-weight: bold; color: #000; cursor: pointer; border: none; }
+        .level-pick:hover { background-color: #e3e8ff; }
+        
+        .cell.selected { background-color: #e3e8ff; color: #0073aa; transform: scale(0.9); }
+        .cell.cleared, .cell.empty-filler { background-color: #f0f0f0 !important; color: #ccc !important; pointer-events: none; }
         .cell.cleared { text-decoration: line-through; }
 
-        /* Botones estilo Sudoku */
         .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
-        .controls button { 
-            padding: 10px 15px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            border: none; 
-            border-radius: 5px; /* */
-            background-color: #f0f0f0; /* */
-            font-family: 'Segoe UI', sans-serif;
-            text-transform: uppercase;
-        }
-        .controls button:hover { background-color: #e0e0e0; }
-        
-        #message { margin-top: 15px; font-weight: bold; }
+        button { padding: 10px 15px; cursor: pointer; font-weight: bold; border: none; border-radius: 5px; background-color: #f0f0f0; text-transform: uppercase; }
+        button:hover { background-color: #e0e0e0; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Popup Estilo Pengu */
+        #game-over-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:100; }
+        .popup { background: #fff; padding: 30px; border: 4px solid #000; border-radius: 15px; width: 300px; text-align: center; }
+        .popup input { width: 100%; padding: 10px; margin: 15px 0; border: 2px solid #000; font-weight: bold; text-align: center; }
+
+        #leaderboard { margin-top: 30px; border: 3px solid #000; padding: 15px; background: #fff; }
+        .score-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
         .hidden-element { display: none !important; }
     </style>
 </head>
@@ -94,46 +42,79 @@
 
     <div id="game-container">
         <h2 id="game-title">Pengu Numerama</h2>
+        
+        <div class="stats-bar hidden-element" id="stats">
+            <span>PUNTOS: <span id="score-val">0</span></span>
+            <span>INTENTOS: <span id="adds-val">10</span></span>
+        </div>
+
         <div id="grid"></div>
+
         <div class="controls">
             <button id="add-btn" class="hidden-element" onclick="addNumbers()">AÑADIR FILAS</button>
             <button onclick="showLevelSelection()">ELEGIR NIVEL</button>
         </div>
-        <p id="message"></p>
+
+        <div id="leaderboard">
+            <h3 style="margin-top:0">🏆 TOP 10 GLOBAL</h3>
+            <div id="scores-list">Cargando...</div>
+        </div>
     </div>
 
-    <script>
-        let numbers = [];
-        let selectedIndex = null;
+    <div id="game-over-overlay">
+        <div class="popup">
+            <h2 style="margin:0">¡FIN DEL JUEGO!</h2>
+            <p>Puntuación Final:</p>
+            <h1 id="final-score" style="margin:10px 0; color:#0073aa;">0</h1>
+            <input type="text" id="player-name" placeholder="TU NOMBRE" maxlength="12">
+            <button onclick="sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR RÉCORD</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
+            authDomain: "pengu-games.firebaseapp.com",
+            projectId: "pengu-games",
+            storageBucket: "pengu-games.firebasestorage.app",
+            messagingSenderId: "467087275142",
+            appId: "1:467087275142:web:1fc347c19edba0f7fa4d07",
+            databaseURL: "https://pengu-games-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let numbers = [], selectedIndex = null;
+        let totalScore = 0, addRowsRemaining = 10;
         const COLS = 9;
 
-        function showLevelSelection() {
+        window.showLevelSelection = function() {
             const grid = document.getElementById('grid');
-            if(!grid) return;
-            grid.innerHTML = '';
-            grid.classList.add('no-grid'); 
+            grid.innerHTML = ''; grid.classList.add('no-grid');
             document.getElementById('game-title').innerText = "Pengu Numerama";
             document.getElementById('add-btn').classList.add('hidden-element');
-            document.getElementById('message').innerText = "";
+            document.getElementById('stats').classList.add('hidden-element');
+            document.getElementById('game-over-overlay').style.display = 'none';
 
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
-                div.className = 'level-pick';
-                div.textContent = lv;
+                div.className = 'level-pick'; div.textContent = lv;
                 div.onclick = () => startLevel(lv);
                 grid.appendChild(div);
             }
-        }
+        };
 
         function startLevel(lv) {
-            const grid = document.getElementById('grid');
-            grid.classList.remove('no-grid'); 
-            document.getElementById('game-title').innerText = `Nivel ${lv}`;
+            document.getElementById('grid').classList.remove('no-grid');
             document.getElementById('add-btn').classList.remove('hidden-element');
-            
-            numbers = [];
-            let initialCount = 18 + (lv * 9); 
-            for (let i = 0; i < initialCount; i++) {
+            document.getElementById('stats').classList.remove('hidden-element');
+            numbers = []; totalScore = 0; addRowsRemaining = 10;
+            updateUI();
+            for (let i = 0; i < 18 + (lv * 9); i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
             }
             renderGame();
@@ -142,113 +123,179 @@
         function renderGame() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
+            
+            // Eliminar filas completas antes de renderizar
+            checkFullRows();
 
-            // 1. Dibujar los números reales
             numbers.forEach((num, index) => {
                 const div = document.createElement('div');
                 div.className = 'cell';
                 if (num.status === 'cleared') div.classList.add('cleared');
                 if (selectedIndex === index) div.classList.add('selected');
-                
                 div.textContent = num.val;
                 div.onclick = () => handleSelect(index);
                 grid.appendChild(div);
             });
 
-            // 2. Dibujar celdas vacías (fillers) para completar la última fila
-            const remainingSpots = (COLS - (numbers.length % COLS)) % COLS;
-            for (let i = 0; i < remainingSpots; i++) {
-                const filler = document.createElement('div');
-                filler.className = 'cell empty-filler';
-                filler.textContent = "\u00A0"; // Espacio en blanco
-                grid.appendChild(filler);
+            const fill = (COLS - (numbers.length % COLS)) % COLS;
+            for (let i = 0; i < fill; i++) {
+                const f = document.createElement('div');
+                f.className = 'cell empty-filler'; f.textContent = "\u00A0";
+                grid.appendChild(f);
             }
-            
-            checkWin();
+            checkEndGame();
         }
 
-        function handleSelect(index) {
-            if (numbers[index].status === 'cleared') return;
+        function checkFullRows() {
+            for (let i = 0; i < numbers.length; i += COLS) {
+                let row = numbers.slice(i, i + COLS);
+                if (row.length === COLS && row.every(n => n.status === 'cleared')) {
+                    numbers.splice(i, COLS);
+                    totalScore += 9; // 1 punto por cuadrito eliminado
+                    updateUI();
+                    i -= COLS; // Re-evaluar posición
+                }
+            }
+        }
 
-            if (selectedIndex === null) {
-                selectedIndex = index;
-            } else if (selectedIndex === index) {
-                selectedIndex = null;
-            } else {
-                if (isMatchPossible(selectedIndex, index)) {
+        function handleSelect(i) {
+            if (numbers[i].status === 'cleared') return;
+            if (selectedIndex === null) selectedIndex = i;
+            else if (selectedIndex === i) selectedIndex = null;
+            else {
+                const result = getMatchResult(selectedIndex, i);
+                if (result.isPossible) {
+                    const points = (numbers[selectedIndex].val + numbers[i].val) * result.multiplier;
+                    totalScore += points;
                     numbers[selectedIndex].status = 'cleared';
-                    numbers[index].status = 'cleared';
+                    numbers[i].status = 'cleared';
                     selectedIndex = null;
-                    document.getElementById('message').innerText = "¡Bien!";
-                    setTimeout(() => document.getElementById('message').innerText = "", 800);
+                    updateUI();
                 } else {
-                    selectedIndex = index;
+                    selectedIndex = i;
                 }
             }
             renderGame();
         }
 
-        function isMatchPossible(idx1, idx2) {
-            const v1 = numbers[idx1].val;
-            const v2 = numbers[idx2].val;
+        function getMatchResult(idx1, idx2) {
+            const v1 = numbers[idx1].val, v2 = numbers[idx2].val;
             if (v1 === v2 || v1 + v2 === 10) {
-                return checkPath(idx1, idx2);
+                const path = getPathInfo(idx1, idx2);
+                if (path.clear) {
+                    return { isPossible: true, multiplier: Math.max(1, path.clearedCount) };
+                }
             }
-            return false;
+            return { isPossible: false };
         }
 
-        function checkPath(idx1, idx2) {
-            const start = Math.min(idx1, idx2);
-            const end = Math.max(idx1, idx2);
-            const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
-            const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
+        function getPathInfo(idx1, idx2) {
+            const start = Math.min(idx1, idx2), end = Math.max(idx1, idx2);
+            const r1 = Math.floor(idx1/COLS), c1 = idx1%COLS;
+            const r2 = Math.floor(idx2/COLS), c2 = idx2%COLS;
+            
+            let clearedCount = 0;
+            let step = 0;
 
-            // Horizontal / Serpiente
-            let snakeClear = true;
-            for (let i = start + 1; i < end; i++) {
-                if (numbers[i].status === 'active') { snakeClear = false; break; }
+            // Lógica Snake/Linear
+            let linearClear = true;
+            let linearCount = 0;
+            for(let i=start+1; i<end; i++) {
+                if(numbers[i].status === 'active') { linearClear = false; break; }
+                clearedCount++;
             }
-            if (snakeClear) return true;
+            if(linearClear) return { clear: true, clearedCount };
 
-            // Vertical
-            if (c1 === c2) {
-                let verticalClear = true;
-                for (let i = start + COLS; i < end; i += COLS) {
-                    if (numbers[i].status === 'active') { verticalClear = false; break; }
+            // Lógica Vertical
+            clearedCount = 0;
+            if(c1 === c2) {
+                for(let i=start+COLS; i<end; i+=COLS) {
+                    if(numbers[i].status === 'active') return { clear: false };
+                    clearedCount++;
                 }
-                if (verticalClear) return true;
+                return { clear: true, clearedCount };
             }
 
-            // Diagonal
-            if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
-                let diagonalClear = true;
-                const rowDir = r2 > r1 ? 1 : -1;
-                const colDir = c2 > c1 ? 1 : -1;
-                const step = (rowDir * COLS) + colDir;
-                for (let i = idx1 + step; i !== idx2; i += step) {
-                    if (numbers[i].status === 'active') { diagonalClear = false; break; }
+            // Lógica Diagonal
+            clearedCount = 0;
+            if(Math.abs(r1-r2) === Math.abs(c1-c2)) {
+                const step = (r2 > r1 ? COLS : -COLS) + (c2 > c1 ? 1 : -1);
+                for(let i=idx1+step; i !== idx2; i+=step) {
+                    if(numbers[i].status === 'active') return { clear: false };
+                    clearedCount++;
                 }
-                if (diagonalClear) return true;
+                return { clear: true, clearedCount };
             }
-            return false;
+
+            return { clear: false };
         }
 
-        function addNumbers() {
-            // Regla clásica: Duplicar solo los activos
-            const activeNums = numbers.filter(n => n.status === 'active');
-            if (activeNums.length === 0) return;
-            numbers = [...numbers, ...activeNums.map(n => ({ val: n.val, status: 'active' }))];
+        window.addNumbers = () => {
+            if (addRowsRemaining <= 0) return;
+            const active = numbers.filter(n => n.status === 'active');
+            if (active.length === 0) return;
+            
+            numbers = [...numbers, ...active.map(n => ({ val: n.val, status: 'active' }))];
+            addRowsRemaining--;
+            updateUI();
             renderGame();
+        };
+
+        function updateUI() {
+            document.getElementById('score-val').innerText = totalScore;
+            document.getElementById('adds-val').innerText = addRowsRemaining;
+            document.getElementById('add-btn').disabled = (addRowsRemaining <= 0);
         }
 
-        function checkWin() {
-            if (numbers.length > 0 && numbers.every(n => n.status === 'active' === false)) {
-                document.getElementById('message').innerText = "¡TABLERO COMPLETADO!";
-                document.getElementById('message').style.color = "green";
+        function checkEndGame() {
+            // Si el tablero está vacío o no hay más movimientos posibles
+            const anyActive = numbers.some(n => n.status === 'active');
+            if (!anyActive && numbers.length > 0) {
+                triggerGameOver();
+                return;
+            }
+
+            if (addRowsRemaining === 0) {
+                if (!hasPossibleMoves()) triggerGameOver();
             }
         }
 
-        window.addEventListener('DOMContentLoaded', showLevelSelection);
+        function hasPossibleMoves() {
+            const actives = [];
+            numbers.forEach((n, i) => { if(n.status === 'active') actives.push(i); });
+            for(let i=0; i<actives.length; i++) {
+                for(let j=i+1; j<actives.length; j++) {
+                    if(getMatchResult(actives[i], actives[j]).isPossible) return true;
+                }
+            }
+            return false;
+        }
+
+        function triggerGameOver() {
+            document.getElementById('final-score').innerText = totalScore;
+            document.getElementById('game-over-overlay').style.display = 'flex';
+        }
+
+        window.sendToFirebase = function() {
+            const name = document.getElementById('player-name').value || "Anónimo";
+            push(ref(db, 'numerama/ranking'), {
+                nombre: name.toUpperCase(),
+                puntos: totalScore,
+                fecha: Date.now()
+            });
+            showLevelSelection();
+        };
+
+        // Ranking Listener
+        onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
+            const list = document.getElementById('scores-list'); list.innerHTML = '';
+            const data = []; snap.forEach(c => data.push(c.val()));
+            data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
+
+        window.onload = showLevelSelection;
     </script>
 </body>
 </html>
