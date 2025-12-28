@@ -78,7 +78,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
@@ -96,7 +96,7 @@
         let numbers = [], selectedIndex = null, totalScore = 0, addRowsRemaining = 10, isConfirmingEnd = false;
         const COLS = 9;
 
-        // --- LÓGICA DE FIREBASE PARA PARTIDAS INDEPENDIENTES ---
+        // --- LÓGICA DE FIREBASE ---
         
         window.sendToFirebase = function() {
             const btn = document.getElementById('firebase-save-btn');
@@ -106,10 +106,9 @@
             btn.innerText = "GUARDANDO...";
             btn.disabled = true;
 
-            // Al usar push() creamos una nueva entrada ÚNICA en lugar de sobrescribir
             push(ref(db, 'numerama/ranking'), {
                 nombre: name.toUpperCase(),
-                puntos: totalScore,
+                puntos: parseInt(totalScore),
                 fecha: Date.now()
             }).then(() => {
                 window.showLevelSelection();
@@ -118,6 +117,29 @@
                 window.showLevelSelection();
             });
         };
+
+        // Escuchar Ranking (Corregido para mayor estabilidad)
+        onValue(ref(db, 'numerama/ranking'), (snap) => {
+            const list = document.getElementById('scores-list');
+            if (!snap.exists()) {
+                list.innerHTML = '<div style="font-size:0.8rem; color:#999;">¡Sin récords aún!</div>';
+                return;
+            }
+
+            const data = [];
+            snap.forEach(child => {
+                data.push(child.val());
+            });
+
+            // Ordenar localmente por puntos (Mayor a menor)
+            data.sort((a, b) => b.puntos - a.puntos);
+
+            // Mostrar solo los 10 mejores
+            list.innerHTML = '';
+            data.slice(0, 10).forEach(s => {
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
 
         // --- NAVEGACIÓN Y JUEGO ---
         window.showLevelSelection = function() {
@@ -166,7 +188,7 @@
             if (!isConfirmingEnd) {
                 isConfirmingEnd = true;
                 btn.classList.add('confirming');
-                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
+                btn.innerText = "¿ESTÁS SEGURO?";
             } else {
                 triggerGameOver();
             }
@@ -296,15 +318,6 @@
             document.getElementById('final-score').innerText = totalScore;
             document.getElementById('game-over-overlay').style.display = 'flex';
         }
-
-        onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
-            const list = document.getElementById('scores-list'); list.innerHTML = '';
-            const data = []; 
-            snap.forEach(c => data.push(c.val()));
-            data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
-                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
-            });
-        });
 
         window.showLevelSelection();
     </script>
