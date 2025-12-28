@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengu Numerama 1.3.1</title>
+    <title>Pengu Numerama 1.3.1 (revert)</title>
     <style>
         /* --- ESTILOS VISUALES --- */
         * { box-sizing: border-box; }
@@ -63,7 +63,7 @@
             <div id="scores-list">Cargando...</div>
         </div>
 
-        <footer>Desarrollado por Pengu - Version 1.3.1</footer>
+        <footer>Desarrollado por Pengu - Version 1.3</footer>
     </div>
 
     <div id="game-over-overlay">
@@ -78,7 +78,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
@@ -96,7 +96,8 @@
         let numbers = [], selectedIndex = null, totalScore = 0, addRowsRemaining = 10, isConfirmingEnd = false;
         const COLS = 9;
 
-        // --- CORRECCIÓN ERROR 2: RESET DEL BOTÓN ---
+        // --- LÓGICA DE FIREBASE ---
+        
         window.sendToFirebase = function() {
             const btn = document.getElementById('firebase-save-btn');
             const nameInput = document.getElementById('player-name').value.trim();
@@ -107,20 +108,38 @@
 
             push(ref(db, 'numerama/ranking'), {
                 nombre: name.toUpperCase(),
-                puntos: totalScore,
+                puntos: parseInt(totalScore),
                 fecha: Date.now()
             }).then(() => {
-                // Reset de estado para la siguiente partida sin refrescar
-                btn.innerText = "GUARDAR Y SALIR";
-                btn.disabled = false;
                 window.showLevelSelection();
             }).catch((err) => {
                 console.error("Error:", err);
-                btn.innerText = "GUARDAR Y SALIR";
-                btn.disabled = false;
                 window.showLevelSelection();
             });
         };
+
+        // Escuchar Ranking (Corregido para mayor estabilidad)
+        onValue(ref(db, 'numerama/ranking'), (snap) => {
+            const list = document.getElementById('scores-list');
+            if (!snap.exists()) {
+                list.innerHTML = '<div style="font-size:0.8rem; color:#999;">¡Sin récords aún!</div>';
+                return;
+            }
+
+            const data = [];
+            snap.forEach(child => {
+                data.push(child.val());
+            });
+
+            // Ordenar localmente por puntos (Mayor a menor)
+            data.sort((a, b) => b.puntos - a.puntos);
+
+            // Mostrar solo los 10 mejores
+            list.innerHTML = '';
+            data.slice(0, 10).forEach(s => {
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
 
         // --- NAVEGACIÓN Y JUEGO ---
         window.showLevelSelection = function() {
@@ -131,12 +150,7 @@
             document.getElementById('end-btn').classList.add('hidden-element');
             document.getElementById('stats').classList.add('hidden-element');
             document.getElementById('game-over-overlay').style.display = 'none';
-            
-            // Reset botones al volver al menú
             resetEndButton();
-            const btn = document.getElementById('firebase-save-btn');
-            if(btn) { btn.innerText = "GUARDAR Y SALIR"; btn.disabled = false; }
-
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
                 div.className = 'level-pick'; div.textContent = lv;
@@ -158,25 +172,6 @@
             renderGame();
         };
 
-        // --- CORRECCIÓN ERROR 1: TEXTO DE CONFIRMACIÓN ---
-        window.handleEndClick = function() {
-            const btn = document.getElementById('end-btn');
-            if (!isConfirmingEnd) {
-                isConfirmingEnd = true;
-                btn.classList.add('confirming');
-                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
-            } else {
-                triggerGameOver();
-            }
-        };
-
-        function resetEndButton() {
-            isConfirmingEnd = false;
-            const btn = document.getElementById('end-btn');
-            if(btn) { btn.classList.remove('confirming'); btn.innerText = "TERMINAR JUEGO"; }
-        }
-
-        // --- LÓGICA DE JUEGO (SIN CAMBIOS) ---
         window.addNumbers = function() {
             if (addRowsRemaining <= 0) return;
             resetEndButton();
@@ -186,6 +181,17 @@
             addRowsRemaining--;
             updateUI();
             renderGame();
+        };
+
+        window.handleEndClick = function() {
+            const btn = document.getElementById('end-btn');
+            if (!isConfirmingEnd) {
+                isConfirmingEnd = true;
+                btn.classList.add('confirming');
+                btn.innerText = "¿ESTÁS SEGURO?";
+            } else {
+                triggerGameOver();
+            }
         };
 
         function renderGame() {
@@ -302,19 +308,16 @@
             return false;
         }
 
+        function resetEndButton() {
+            isConfirmingEnd = false;
+            const btn = document.getElementById('end-btn');
+            if(btn) { btn.classList.remove('confirming'); btn.innerText = "TERMINAR JUEGO"; }
+        }
+
         function triggerGameOver() {
             document.getElementById('final-score').innerText = totalScore;
             document.getElementById('game-over-overlay').style.display = 'flex';
         }
-
-        onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
-            const list = document.getElementById('scores-list'); list.innerHTML = '';
-            const data = []; 
-            snap.forEach(c => data.push(c.val()));
-            data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
-                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
-            });
-        });
 
         window.showLevelSelection();
     </script>
