@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengu Numerama 1.2.3</title>
+    <title>Pengu Numerama 1.2.4</title>
     <style>
         /* --- ESTILOS SUDOKU PRESERVADOS --- */
         * { box-sizing: border-box; }
@@ -37,9 +37,9 @@
 
         #leaderboard { margin-top: 30px; border: 3px solid #000; padding: 15px; background: #fff; }
         .score-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-        .hidden-element { display: none !important; }
-
+        
         footer { margin-top: 20px; font-size: 0.7rem; color: #999; font-weight: bold; }
+        .hidden-element { display: none !important; }
     </style>
 </head>
 <body>
@@ -55,8 +55,8 @@
         <div id="grid"></div>
 
         <div class="controls">
-            <button id="add-btn" class="hidden-element" onclick="addNumbers()">AÑADIR FILAS</button>
-            <button id="end-btn" class="hidden-element" onclick="handleEndClick()">TERMINAR JUEGO</button>
+            <button id="add-btn" class="hidden-element" onclick="window.addNumbers()">AÑADIR FILAS</button>
+            <button id="end-btn" class="hidden-element" onclick="window.handleEndClick()">TERMINAR JUEGO</button>
         </div>
 
         <div id="leaderboard">
@@ -70,12 +70,12 @@
     </div>
 
     <div id="game-over-overlay">
-        <div class="popup" onclick="event.stopPropagation()">
+        <div class="popup">
             <h2 style="margin:0">¡FIN DEL JUEGO!</h2>
             <p>Puntuación Final:</p>
             <h1 id="final-score" style="margin:10px 0; color:#0073aa;">0</h1>
             <input type="text" id="player-name" placeholder="TU NOMBRE" maxlength="12">
-            <button onclick="sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR Y SALIR</button>
+            <button id="firebase-save-btn" onclick="window.sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR Y SALIR</button>
         </div>
     </div>
 
@@ -83,7 +83,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
-        // Configuración
+        // Configuración verificada
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
             authDomain: "pengu-games.firebaseapp.com",
@@ -102,12 +102,11 @@
         let isConfirmingEnd = false;
         const COLS = 9;
 
-        // VINCULACIÓN DE FUNCIONES AL OBJETO WINDOW
+        // --- FUNCIONES EXPORTADAS AL NAVEGADOR (WINDOW) ---
         window.showLevelSelection = function() {
             const grid = document.getElementById('grid');
             if(!grid) return;
-            grid.innerHTML = ''; 
-            grid.classList.add('no-grid');
+            grid.innerHTML = ''; grid.classList.add('no-grid');
             document.getElementById('game-title').innerText = "Pengu Numerama";
             document.getElementById('add-btn').classList.add('hidden-element');
             document.getElementById('end-btn').classList.add('hidden-element');
@@ -117,8 +116,7 @@
 
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
-                div.className = 'level-pick'; 
-                div.textContent = lv;
+                div.className = 'level-pick'; div.textContent = lv;
                 div.onclick = () => window.startLevel(lv);
                 grid.appendChild(div);
             }
@@ -159,23 +157,33 @@
             }
         };
 
+        // --- CORRECCIÓN CLAVE: FUNCIÓN DE GUARDADO ---
         window.sendToFirebase = function() {
+            const btn = document.getElementById('firebase-save-btn');
             const nameInput = document.getElementById('player-name').value.trim();
             const name = nameInput || "ANÓNIMO";
             
+            // Feedback visual inmediato
+            btn.innerText = "GUARDANDO...";
+            btn.disabled = true;
+
             push(ref(db, 'numerama/ranking'), {
                 nombre: name.toUpperCase(),
                 puntos: totalScore,
                 fecha: Date.now()
             }).then(() => {
+                btn.disabled = false;
+                btn.innerText = "GUARDAR Y SALIR";
                 window.showLevelSelection();
             }).catch((err) => {
                 console.error("Error Firebase:", err);
-                window.showLevelSelection();
+                alert("Error al conectar con la base de datos.");
+                btn.disabled = false;
+                btn.innerText = "GUARDAR Y SALIR";
             });
         };
 
-        // --- Lógica Interna ---
+        // --- LÓGICA INTERNA ---
         function renderGame() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
@@ -304,7 +312,6 @@
             document.getElementById('game-over-overlay').style.display = 'flex';
         }
 
-        // Ranking Listener
         onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
             const list = document.getElementById('scores-list'); list.innerHTML = '';
             const data = []; 
@@ -314,12 +321,8 @@
             });
         });
 
-        // INICIO AUTOMÁTICO
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', window.showLevelSelection);
-        } else {
-            window.showLevelSelection();
-        }
+        // Inicio
+        window.showLevelSelection();
     </script>
 </body>
 </html>
