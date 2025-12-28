@@ -2,105 +2,103 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengu Numerama</title>
     <style>
-        /* --- ESTILO REPLICADO DE LA IMAGEN --- */
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        
+        /* --- ESTILO SINCRONIZADO CON PENGU SUDOKU --- */
+        * { box-sizing: border-box; }
         body { 
             display: flex; 
             justify-content: center; 
             align-items: flex-start; 
             min-height: 100vh; 
             margin: 0; 
-            padding: 40px 20px; 
-            background-color: #ffffff; 
-            font-family: 'Inter', -apple-system, sans-serif;
+            padding-top: 20px;
+            background-color: #ffffff;
         }
+        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; }
 
-        #game-container { 
-            text-align: center; 
-            width: 100%; 
-            max-width: 400px; 
-        }
-
-        /* Título exacto de la imagen */
-        h2 { 
-            margin: 0 0 30px 0; 
-            font-size: 2.2rem; 
-            font-weight: 800; 
-            color: #000; 
-            letter-spacing: -1px;
-        }
-
-        /* Grilla con bordes gruesos y definidos */
         #grid { 
             display: grid; 
             grid-template-columns: repeat(9, 1fr); 
-            border: 4px solid #000; /* Borde exterior grueso */
+            border: 3px solid #000; 
+            width: 100%; 
+            /* En Numerama no fijamos aspect-ratio para permitir que crezca con "Añadir Filas" */
             background-color: #000; 
-            gap: 2px; /* Líneas internas sólidas */
-            margin-bottom: 30px;
+            overflow: hidden;
         }
 
-        /* Estilo de nivel (3x3) igual a la imagen */
+        /* Estilo idéntico para la selección de niveles */
         #grid.no-grid {
             grid-template-columns: repeat(3, 1fr) !important;
-            gap: 4px; 
+            grid-template-rows: repeat(3, 1fr) !important;
+            aspect-ratio: 1 / 1; /* Solo para selección de nivel */
+            background-color: #000 !important; 
+            gap: 3px; 
         }
+
+        .level-pick {
+            background: #fff;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem !important;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+            border: none;
+        }
+        .level-pick:hover { background-color: #e3e8ff; }
 
         .cell {
             background: #fff; 
-            aspect-ratio: 1/1;
+            width: 100%; 
+            aspect-ratio: 1 / 1; /* Cada número es un cuadrado perfecto */
+            border: 0.5px solid #ccc; 
+            font-size: 1.2rem;
             display: flex; 
             justify-content: center; 
             align-items: center;
-            font-size: 2.5rem; /* Números grandes y bold */
-            cursor: pointer; 
-            font-weight: 800;
-            color: #000;
-            user-select: none; 
+            cursor: pointer;
+            font-weight: bold;
         }
 
-        /* Estilos específicos de Numerama */
-        .game-cell { font-size: 1.4rem; } /* Más pequeños cuando hay muchos */
+        /* Colores de estado sincronizados */
         .cell.selected { background-color: #e3e8ff; color: #0073aa; }
-        .cell.cleared { color: #d1d1d1; text-decoration: line-through; pointer-events: none; }
-
-        /* Botones idénticos a la imagen */
-        .controls { 
-            display: flex; 
-            justify-content: center; 
-            gap: 15px; 
+        .cell.cleared { 
+            background-color: #f0f0f0 !important; /* Mismo gris que celdas fijas de Sudoku */
+            color: #ccc !important; 
+            text-decoration: line-through; 
+            pointer-events: none; 
         }
 
-        button { 
-            padding: 16px 24px; 
-            font-size: 0.9rem; 
-            font-weight: 800; 
+        /* Botones idénticos a Sudoku */
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        .controls button { 
+            padding: 10px 15px; 
             cursor: pointer; 
+            font-weight: bold; 
             border: none; 
-            border-radius: 8px; /* Esquinas ligeramente redondeadas */
-            background-color: #eeeeee; /* Gris claro exacto */
-            color: #000;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            border-radius: 5px; 
+            background-color: #f0f0f0; 
+            font-family: 'Segoe UI', sans-serif;
         }
-
-        button:active { transform: scale(0.98); }
-
-        #message { margin-top: 20px; font-weight: 800; font-size: 1.1rem; }
+        .controls button:hover { background-color: #e0e0e0; }
+        
+        #message { margin-top: 15px; font-weight: bold; }
+        .hidden-element { display: none !important; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <h2 id="game-title">Pengu Numerama</h2>
-        <div id="grid" class="no-grid"></div>
+        <div id="grid"></div>
         <div class="controls">
-            <button id="action-btn" onclick="addNumbers()">Añadir Filas</button>
-            <button onclick="showLevelSelection()">Elegir Nivel</button>
+            <button id="add-btn" class="hidden-element" onclick="addNumbers()">AÑADIR FILAS</button>
+            <button onclick="showLevelSelection()">ELEGIR NIVEL</button>
         </div>
         <p id="message"></p>
     </div>
@@ -112,14 +110,16 @@
 
         function showLevelSelection() {
             const grid = document.getElementById('grid');
+            if(!grid) return;
             grid.innerHTML = '';
-            grid.classList.add('no-grid');
+            grid.classList.add('no-grid'); 
             document.getElementById('game-title').innerText = "Pengu Numerama";
-            document.getElementById('action-btn').style.display = 'none';
+            document.getElementById('add-btn').classList.add('hidden-element');
+            document.getElementById('message').innerText = "";
 
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
-                div.className = 'cell';
+                div.className = 'level-pick';
                 div.textContent = lv;
                 div.onclick = () => startLevel(lv);
                 grid.appendChild(div);
@@ -128,98 +128,17 @@
 
         function startLevel(lv) {
             const grid = document.getElementById('grid');
-            grid.classList.remove('no-grid');
+            grid.classList.remove('no-grid'); 
             document.getElementById('game-title').innerText = `Nivel ${lv}`;
-            document.getElementById('action-btn').style.display = 'block';
+            document.getElementById('add-btn').classList.remove('hidden-element');
             
             numbers = [];
-            let count = 18 + (lv * 9);
-            for (let i = 0; i < count; i++) {
+            // Lógica: Empezar con filas proporcionales al nivel
+            let initialCount = 18 + (lv * 9); 
+            for (let i = 0; i < initialCount; i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
             }
-            render();
+            renderGame();
         }
 
-        function render() {
-            const grid = document.getElementById('grid');
-            grid.innerHTML = '';
-            numbers.forEach((num, index) => {
-                const div = document.createElement('div');
-                div.className = 'cell game-cell';
-                if (num.status === 'cleared') div.classList.add('cleared');
-                if (selectedIndex === index) div.classList.add('selected');
-                div.textContent = num.val;
-                div.onclick = () => handleSelect(index);
-                grid.appendChild(div);
-            });
-        }
-
-        function handleSelect(index) {
-            if (numbers[index].status === 'cleared') return;
-            if (selectedIndex === null) {
-                selectedIndex = index;
-            } else if (selectedIndex === index) {
-                selectedIndex = null;
-            } else {
-                if (checkMatch(selectedIndex, index)) {
-                    numbers[selectedIndex].status = 'cleared';
-                    numbers[index].status = 'cleared';
-                    selectedIndex = null;
-                } else {
-                    selectedIndex = index;
-                }
-            }
-            render();
-        }
-
-        function checkMatch(idx1, idx2) {
-            const v1 = numbers[idx1].val;
-            const v2 = numbers[idx2].val;
-            if (v1 === v2 || v1 + v2 === 10) return isPathClear(idx1, idx2);
-            return false;
-        }
-
-        function isPathClear(idx1, idx2) {
-            const start = Math.min(idx1, idx2);
-            const end = Math.max(idx1, idx2);
-            const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
-            const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
-
-            // Horizontal / Serpiente
-            let clear = true;
-            for (let i = start + 1; i < end; i++) {
-                if (numbers[i].status === 'active') { clear = false; break; }
-            }
-            if (clear) return true;
-
-            // Vertical
-            if (c1 === c2) {
-                clear = true;
-                for (let i = start + COLS; i < end; i += COLS) {
-                    if (numbers[i].status === 'active') { clear = false; break; }
-                }
-                if (clear) return true;
-            }
-
-            // Diagonal
-            if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
-                clear = true;
-                const step = (r2 > r1 ? COLS : -COLS) + (c2 > c1 ? 1 : -1);
-                for (let i = idx1 + step; i !== idx2; i += step) {
-                    if (numbers[i].status === 'active') { clear = false; break; }
-                }
-                if (clear) return true;
-            }
-            return false;
-        }
-
-        function addNumbers() {
-            const actives = numbers.filter(n => n.status === 'active');
-            numbers = [...numbers, ...actives.map(n => ({ val: n.val, status: 'active' }))];
-            render();
-        }
-
-        window.onload = showLevelSelection;
-    </script>
-</body>
-</html>
+        function render
