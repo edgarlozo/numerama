@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pengu Numerama 1.2.2</title>
+    <title>Pengu Numerama 1.2.3</title>
     <style>
         /* --- ESTILOS SUDOKU PRESERVADOS --- */
         * { box-sizing: border-box; }
@@ -70,7 +70,7 @@
     </div>
 
     <div id="game-over-overlay">
-        <div class="popup">
+        <div class="popup" onclick="event.stopPropagation()">
             <h2 style="margin:0">¡FIN DEL JUEGO!</h2>
             <p>Puntuación Final:</p>
             <h1 id="final-score" style="margin:10px 0; color:#0073aa;">0</h1>
@@ -83,6 +83,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
+        // Configuración
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
             authDomain: "pengu-games.firebaseapp.com",
@@ -101,11 +102,12 @@
         let isConfirmingEnd = false;
         const COLS = 9;
 
-        // VINCULACIÓN GLOBAL
+        // VINCULACIÓN DE FUNCIONES AL OBJETO WINDOW
         window.showLevelSelection = function() {
             const grid = document.getElementById('grid');
             if(!grid) return;
-            grid.innerHTML = ''; grid.classList.add('no-grid');
+            grid.innerHTML = ''; 
+            grid.classList.add('no-grid');
             document.getElementById('game-title').innerText = "Pengu Numerama";
             document.getElementById('add-btn').classList.add('hidden-element');
             document.getElementById('end-btn').classList.add('hidden-element');
@@ -115,7 +117,8 @@
 
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
-                div.className = 'level-pick'; div.textContent = lv;
+                div.className = 'level-pick'; 
+                div.textContent = lv;
                 div.onclick = () => window.startLevel(lv);
                 grid.appendChild(div);
             }
@@ -134,6 +137,45 @@
             renderGame();
         };
 
+        window.addNumbers = function() {
+            if (addRowsRemaining <= 0) return;
+            resetEndButton();
+            const active = numbers.filter(n => n.status === 'active');
+            if (active.length === 0) return;
+            numbers = [...numbers, ...active.map(n => ({ val: n.val, status: 'active' }))];
+            addRowsRemaining--;
+            updateUI();
+            renderGame();
+        };
+
+        window.handleEndClick = function() {
+            const btn = document.getElementById('end-btn');
+            if (!isConfirmingEnd) {
+                isConfirmingEnd = true;
+                btn.classList.add('confirming');
+                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
+            } else {
+                triggerGameOver();
+            }
+        };
+
+        window.sendToFirebase = function() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            const name = nameInput || "ANÓNIMO";
+            
+            push(ref(db, 'numerama/ranking'), {
+                nombre: name.toUpperCase(),
+                puntos: totalScore,
+                fecha: Date.now()
+            }).then(() => {
+                window.showLevelSelection();
+            }).catch((err) => {
+                console.error("Error Firebase:", err);
+                window.showLevelSelection();
+            });
+        };
+
+        // --- Lógica Interna ---
         function renderGame() {
             const grid = document.getElementById('grid');
             grid.innerHTML = '';
@@ -200,14 +242,12 @@
             const r1 = Math.floor(idx1/COLS), c1 = idx1%COLS;
             const r2 = Math.floor(idx2/COLS), c2 = idx2%COLS;
             let clearedCount = 0;
-
             let snakeClear = true;
             for(let i=start+1; i<end; i++) {
                 if(numbers[i].status === 'active') { snakeClear = false; break; }
                 clearedCount++;
             }
             if(snakeClear) return { clear: true, clearedCount };
-
             clearedCount = 0;
             if(c1 === c2) {
                 for(let i=start+COLS; i<end; i+=COLS) {
@@ -216,7 +256,6 @@
                 }
                 return { clear: true, clearedCount };
             }
-
             clearedCount = 0;
             if(Math.abs(r1-r2) === Math.abs(c1-c2)) {
                 const step = (r2 > r1 ? COLS : -COLS) + (c2 > c1 ? 1 : -1);
@@ -228,17 +267,6 @@
             }
             return { clear: false };
         }
-
-        window.addNumbers = function() {
-            if (addRowsRemaining <= 0) return;
-            resetEndButton();
-            const active = numbers.filter(n => n.status === 'active');
-            if (active.length === 0) return;
-            numbers = [...numbers, ...active.map(n => ({ val: n.val, status: 'active' }))];
-            addRowsRemaining--;
-            updateUI();
-            renderGame();
-        };
 
         function updateUI() {
             document.getElementById('score-val').innerText = totalScore;
@@ -262,17 +290,6 @@
             return false;
         }
 
-        window.handleEndClick = function() {
-            const btn = document.getElementById('end-btn');
-            if (!isConfirmingEnd) {
-                isConfirmingEnd = true;
-                btn.classList.add('confirming');
-                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
-            } else {
-                triggerGameOver();
-            }
-        };
-
         function resetEndButton() {
             isConfirmingEnd = false;
             const btn = document.getElementById('end-btn');
@@ -287,26 +304,22 @@
             document.getElementById('game-over-overlay').style.display = 'flex';
         }
 
-        // CORRECCIÓN FINAL: GUARDADO VINCULADO
-        window.sendToFirebase = function() {
-            const nameInput = document.getElementById('player-name').value.trim();
-            const name = nameInput || "ANÓNIMO";
-            
-            push(ref(db, 'numerama/ranking'), {
-                nombre: name.toUpperCase(),
-                puntos: totalScore,
-                fecha: Date.now()
-            }).then(() => {
-                window.showLevelSelection();
-            }).catch((err) => {
-                console.error("Error Firebase:", err);
-                window.showLevelSelection();
-            });
-        };
-
+        // Ranking Listener
         onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
             const list = document.getElementById('scores-list'); list.innerHTML = '';
             const data = []; 
             snap.forEach(c => data.push(c.val()));
             data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
-                list.innerHTML += `<div class="score-row"><span>${s
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
+
+        // INICIO AUTOMÁTICO
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.showLevelSelection);
+        } else {
+            window.showLevelSelection();
+        }
+    </script>
+</body>
+</html>
