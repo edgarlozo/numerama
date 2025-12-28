@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengu Numerama</title>
     <style>
-        /* --- ESTILO SINCRONIZADO CON PENGU SUDOKU --- */
+        /* --- ESTILOS CLONADOS EXACTAMENTE DE TU SUDOKU --- */
         * { box-sizing: border-box; }
         body { 
             display: flex; 
@@ -21,20 +21,19 @@
         #grid { 
             display: grid; 
             grid-template-columns: repeat(9, 1fr); 
-            border: 3px solid #000; 
+            /* Se eliminó grid-template-rows fijo para permitir que el juego crezca */
+            border: 3px solid #000;
             width: 100%; 
-            /* En Numerama no fijamos aspect-ratio para permitir que crezca con "Añadir Filas" */
-            background-color: #000; 
+            background-color: #000;
             overflow: hidden;
         }
 
-        /* Estilo idéntico para la selección de niveles */
         #grid.no-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             grid-template-rows: repeat(3, 1fr) !important;
-            aspect-ratio: 1 / 1; /* Solo para selección de nivel */
+            aspect-ratio: 1 / 1;
             background-color: #000 !important; 
-            gap: 3px; 
+            gap: 3px;
         }
 
         .level-pick {
@@ -53,10 +52,10 @@
         .level-pick:hover { background-color: #e3e8ff; }
 
         .cell {
-            background: #fff; 
+            background: #fff;
             width: 100%; 
-            aspect-ratio: 1 / 1; /* Cada número es un cuadrado perfecto */
-            border: 0.5px solid #ccc; 
+            aspect-ratio: 1 / 1; /* Mantiene las celdas cuadradas como en Sudoku */
+            border: 0.5px solid #ccc;
             font-size: 1.2rem;
             display: flex; 
             justify-content: center; 
@@ -65,24 +64,22 @@
             font-weight: bold;
         }
 
-        /* Colores de estado sincronizados */
         .cell.selected { background-color: #e3e8ff; color: #0073aa; }
         .cell.cleared { 
-            background-color: #f0f0f0 !important; /* Mismo gris que celdas fijas de Sudoku */
+            background-color: #f0f0f0 !important;
             color: #ccc !important; 
             text-decoration: line-through; 
             pointer-events: none; 
         }
 
-        /* Botones idénticos a Sudoku */
         .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
         .controls button { 
-            padding: 10px 15px; 
+            padding: 10px 15px;
             cursor: pointer; 
-            font-weight: bold; 
+            font-weight: bold;
             border: none; 
-            border-radius: 5px; 
-            background-color: #f0f0f0; 
+            border-radius: 5px;
+            background-color: #f0f0f0;
             font-family: 'Segoe UI', sans-serif;
         }
         .controls button:hover { background-color: #e0e0e0; }
@@ -133,7 +130,6 @@
             document.getElementById('add-btn').classList.remove('hidden-element');
             
             numbers = [];
-            // Lógica: Empezar con filas proporcionales al nivel
             let initialCount = 18 + (lv * 9); 
             for (let i = 0; i < initialCount; i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
@@ -141,4 +137,18 @@
             renderGame();
         }
 
-        function render
+        function renderGame() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            numbers.forEach((num, index) => {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                if (num.status === 'cleared') div.classList.add('cleared');
+                if (selectedIndex === index) div.classList.add('selected');
+                
+                div.textContent = num.val;
+                div.onclick = () => handleSelect(index);
+                grid.appendChild(div);
+            });
+            checkWin();
+        }
