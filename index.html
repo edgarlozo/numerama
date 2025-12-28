@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengu Numerama</title>
     <style>
-        /* --- ESTILOS CLONADOS EXACTAMENTE DE TU SUDOKU --- */
+        /* --- ESTILOS CLONADOS EXACTAMENTE DE TU SUDOKU suministrado --- */
         * { box-sizing: border-box; }
         body { 
             display: flex; 
@@ -14,28 +14,30 @@
             min-height: 100vh; 
             margin: 0; 
             padding-top: 20px;
-            background-color: #ffffff;
+            background-color: #ffffff; /* Fondo blanco */
         }
-        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; }
+        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; } /* Fuente */
 
         #grid { 
             display: grid; 
             grid-template-columns: repeat(9, 1fr); 
-            /* Se eliminó grid-template-rows fijo para permitir que el juego crezca */
-            border: 3px solid #000;
+            /* SE ELIMINÓ FIXED ASPECT-RATIO Y TEMPLATE-ROWS para permitir que el Numerama crezca */
+            border: 3px solid #000; /* Borde exterior */
             width: 100%; 
-            background-color: #000;
+            background-color: #000; /* Fondo negro */
             overflow: hidden;
         }
 
+        /* Estilo exacto para la selección de niveles del Sudoku suministrado */
         #grid.no-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             grid-template-rows: repeat(3, 1fr) !important;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1 / 1; /* Mantenido para selección de nivel */
             background-color: #000 !important; 
-            gap: 3px;
+            gap: 3px; 
         }
 
+        /* Botones de nivel exactos del Sudoku suministrado */
         .level-pick {
             background: #fff;
             width: 100%;
@@ -43,20 +45,20 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3rem !important;
+            font-size: 3rem !important; /* Tamaño de fuente */
             font-weight: bold;
             color: #000;
             cursor: pointer;
             border: none;
         }
-        .level-pick:hover { background-color: #e3e8ff; }
+        .level-pick:hover { background-color: #e3e8ff; } /* Color de hover */
 
         .cell {
-            background: #fff;
+            background: #fff; /* Celdas blancas */
             width: 100%; 
-            aspect-ratio: 1 / 1; /* Mantiene las celdas cuadradas como en Sudoku */
-            border: 0.5px solid #ccc;
-            font-size: 1.2rem;
+            aspect-ratio: 1 / 1; /* Mantiene las celdas cuadradas. Se aplica al contenido para que el grid crezca */
+            border: 0.5px solid #ccc; /* Líneas finas internas */
+            font-size: 1.2rem; /* Tamaño de fuente de celda */
             display: flex; 
             justify-content: center; 
             align-items: center;
@@ -64,28 +66,30 @@
             font-weight: bold;
         }
 
+        /* Colores de estado conservados de Numerama, compatibles con la estética */
         .cell.selected { background-color: #e3e8ff; color: #0073aa; }
         .cell.cleared { 
-            background-color: #f0f0f0 !important;
+            background-color: #f0f0f0 !important; /* Color de fondo tachado del Sudoku suministrado */
             color: #ccc !important; 
             text-decoration: line-through; 
             pointer-events: none; 
         }
 
-        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
+        /* Botones idénticos a Sudoku suministrado */
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; } /* Márgenes */
         .controls button { 
-            padding: 10px 15px;
+            padding: 10px 15px; /* Padding */
             cursor: pointer; 
             font-weight: bold;
             border: none; 
-            border-radius: 5px;
-            background-color: #f0f0f0;
+            border-radius: 5px; /* Bordes redondeados */
+            background-color: #f0f0f0; /* Color de botones */
             font-family: 'Segoe UI', sans-serif;
         }
-        .controls button:hover { background-color: #e0e0e0; }
+        .controls button:hover { background-color: #e0e0e0; } /* Hover de botones */
         
-        #message { margin-top: 15px; font-weight: bold; }
-        .hidden-element { display: none !important; }
+        #message { margin-top: 15px; font-weight: bold; } /* Márgenes */
+        .hidden-element { display: none !important; } /* Clase oculta */
     </style>
 </head>
 <body>
@@ -101,10 +105,12 @@
     </div>
 
     <script>
+        /* --- LÓGICA DE NUMERAMA (NO MODIFICADA) --- */
         let numbers = [];
         let selectedIndex = null;
         const COLS = 9;
 
+        // Inicialización idéntica a Sudoku suministrado
         function showLevelSelection() {
             const grid = document.getElementById('grid');
             if(!grid) return;
@@ -152,3 +158,82 @@
             });
             checkWin();
         }
+
+        function handleSelect(index) {
+            if (numbers[index].status === 'cleared') return;
+            if (selectedIndex === null) {
+                selectedIndex = index;
+            } else if (selectedIndex === index) {
+                selectedIndex = null;
+            } else {
+                if (isMatchPossible(selectedIndex, index)) {
+                    numbers[selectedIndex].status = 'cleared';
+                    numbers[index].status = 'cleared';
+                    selectedIndex = null;
+                } else {
+                    selectedIndex = index;
+                }
+            }
+            renderGame();
+        }
+
+        function isMatchPossible(idx1, idx2) {
+            const v1 = numbers[idx1].val;
+            const v2 = numbers[idx2].val;
+            if (v1 === v2 || v1 + v2 === 10) return checkPath(idx1, idx2);
+            return false;
+        }
+
+        function checkPath(idx1, idx2) {
+            const start = Math.min(idx1, idx2);
+            const end = Math.max(idx1, idx2);
+            const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
+            const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
+
+            let pathClear = true;
+            for (let i = start + 1; i < end; i++) {
+                if (numbers[i].status === 'active') { pathClear = false; break; }
+            }
+            if (pathClear) return true;
+
+            if (c1 === c2) {
+                pathClear = true;
+                for (let i = start + COLS; i < end; i += COLS) {
+                    if (numbers[i].status === 'active') { pathClear = false; break; }
+                }
+                if (pathClear) return true;
+            }
+
+            if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
+                pathClear = true;
+                const rowStep = r2 > r1 ? 1 : -1;
+                const colStep = c2 > c1 ? 1 : -1;
+                const step = (rowStep * COLS) + colStep;
+                for (let i = idx1 + step; i !== idx2; i += step) {
+                    if (numbers[i].status === 'active') { pathClear = false; break; }
+                }
+                if (pathClear) return true;
+            }
+            return false;
+        }
+
+        function addNumbers() {
+            const activeNums = numbers.filter(n => n.status === 'active');
+            if (activeNums.length === 0) return;
+            numbers = [...numbers, ...activeNums.map(n => ({ val: n.val, status: 'active' }))];
+            renderGame();
+        }
+
+        function checkWin() {
+            if (numbers.length > 0 && numbers.every(n => n.status === 'cleared')) {
+                const msg = document.getElementById('message');
+                msg.innerText = "¡TABLERO COMPLETADO!";
+                msg.style.color = "green";
+            }
+        }
+
+        // Iniciar con la selección de nivel al cargar. Idéntico a Sudoku suministrado
+        window.addEventListener('DOMContentLoaded', showLevelSelection); 
+    </script>
+</body>
+</html>
