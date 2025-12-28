@@ -28,7 +28,7 @@
         button:hover { background-color: #e0e0e0; }
 
         #end-btn { background-color: #ffeded; color: #cc0000; transition: all 0.3s; }
-        #end-btn.confirming { background-color: #ff0000 !important; color: #ffffff !important; }
+        #end-btn.confirming { background-color: #ff0000 !important; color: #ffffff !important; font-size: 0.7rem; }
 
         #game-over-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:100; }
         .popup { background: #fff; padding: 30px; border: 4px solid #000; border-radius: 15px; width: 300px; text-align: center; }
@@ -78,7 +78,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDWN-ax5hCE9j3PTW3ExxywSgBT4iMz1Fg",
@@ -97,7 +97,6 @@
         const COLS = 9;
 
         // --- LÓGICA DE FIREBASE ---
-        
         window.sendToFirebase = function() {
             const btn = document.getElementById('firebase-save-btn');
             const nameInput = document.getElementById('player-name').value.trim();
@@ -108,38 +107,26 @@
 
             push(ref(db, 'numerama/ranking'), {
                 nombre: name.toUpperCase(),
-                puntos: parseInt(totalScore),
+                puntos: totalScore,
                 fecha: Date.now()
             }).then(() => {
+                // Al tener éxito, el botón se resetea por si volvemos a jugar
+                resetFirebaseButton();
                 window.showLevelSelection();
             }).catch((err) => {
                 console.error("Error:", err);
+                resetFirebaseButton();
                 window.showLevelSelection();
             });
         };
 
-        // Escuchar Ranking (Corregido para mayor estabilidad)
-        onValue(ref(db, 'numerama/ranking'), (snap) => {
-            const list = document.getElementById('scores-list');
-            if (!snap.exists()) {
-                list.innerHTML = '<div style="font-size:0.8rem; color:#999;">¡Sin récords aún!</div>';
-                return;
+        function resetFirebaseButton() {
+            const btn = document.getElementById('firebase-save-btn');
+            if(btn) {
+                btn.innerText = "GUARDAR Y SALIR";
+                btn.disabled = false;
             }
-
-            const data = [];
-            snap.forEach(child => {
-                data.push(child.val());
-            });
-
-            // Ordenar localmente por puntos (Mayor a menor)
-            data.sort((a, b) => b.puntos - a.puntos);
-
-            // Mostrar solo los 10 mejores
-            list.innerHTML = '';
-            data.slice(0, 10).forEach(s => {
-                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
-            });
-        });
+        }
 
         // --- NAVEGACIÓN Y JUEGO ---
         window.showLevelSelection = function() {
@@ -150,7 +137,10 @@
             document.getElementById('end-btn').classList.add('hidden-element');
             document.getElementById('stats').classList.add('hidden-element');
             document.getElementById('game-over-overlay').style.display = 'none';
+            
             resetEndButton();
+            resetFirebaseButton(); // Aseguramos que el botón de guardado esté limpio
+
             for (let lv = 1; lv <= 9; lv++) {
                 const div = document.createElement('div');
                 div.className = 'level-pick'; div.textContent = lv;
@@ -172,6 +162,26 @@
             renderGame();
         };
 
+        window.handleEndClick = function() {
+            const btn = document.getElementById('end-btn');
+            if (!isConfirmingEnd) {
+                isConfirmingEnd = true;
+                btn.classList.add('confirming');
+                // CAMBIO 1: Mensaje extendido solicitado
+                btn.innerText = "¿ESTÁS SEGURO DE TERMINAR EL JUEGO?";
+            } else {
+                triggerGameOver();
+            }
+        };
+
+        function resetEndButton() {
+            isConfirmingEnd = false;
+            const btn = document.getElementById('end-btn');
+            if(btn) { btn.classList.remove('confirming'); btn.innerText = "TERMINAR JUEGO"; }
+        }
+
+        // --- RESTO DE LÓGICA ---
+        // (Se mantiene igual para no generar errores)
         window.addNumbers = function() {
             if (addRowsRemaining <= 0) return;
             resetEndButton();
@@ -181,17 +191,6 @@
             addRowsRemaining--;
             updateUI();
             renderGame();
-        };
-
-        window.handleEndClick = function() {
-            const btn = document.getElementById('end-btn');
-            if (!isConfirmingEnd) {
-                isConfirmingEnd = true;
-                btn.classList.add('confirming');
-                btn.innerText = "¿ESTÁS SEGURO?";
-            } else {
-                triggerGameOver();
-            }
         };
 
         function renderGame() {
@@ -308,16 +307,20 @@
             return false;
         }
 
-        function resetEndButton() {
-            isConfirmingEnd = false;
-            const btn = document.getElementById('end-btn');
-            if(btn) { btn.classList.remove('confirming'); btn.innerText = "TERMINAR JUEGO"; }
-        }
-
         function triggerGameOver() {
             document.getElementById('final-score').innerText = totalScore;
             document.getElementById('game-over-overlay').style.display = 'flex';
         }
+
+        // CARGA DE RANKING
+        onValue(query(ref(db, 'numerama/ranking'), orderByChild('puntos'), limitToLast(10)), (snap) => {
+            const list = document.getElementById('scores-list'); list.innerHTML = '';
+            const data = []; 
+            snap.forEach(c => data.push(c.val()));
+            data.sort((a,b) => b.puntos - a.puntos).forEach(s => {
+                list.innerHTML += `<div class="score-row"><span>${s.nombre}</span><b>${s.puntos} pts</b></div>`;
+            });
+        });
 
         window.showLevelSelection();
     </script>
