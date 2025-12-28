@@ -1,168 +1,165 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2685.3">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pengu Number Match</title>
+    <style>
+        /* --- ESTILO PENGU --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            display: flex; justify-content: center; align-items: flex-start; 
+            min-height: 100vh; margin: 0; padding: 20px; background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #game-container { text-align: center; width: 100%; max-width: 400px; }
+        h2 { margin: 0 0 20px 0; font-size: 2.2rem; font-weight: bold; color: #000; }
+        
+        #grid { 
+            display: grid; 
+            grid-template-columns: repeat(9, 1fr); 
+            border: 4px solid #000; 
+            background-color: #000; 
+            gap: 2px; 
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .cell {
+            background: #fff; aspect-ratio: 1/1;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.3rem; cursor: pointer; font-weight: bold;
+            user-select: none;
+        }
+        .cell.selected { background-color: #e3e8ff; color: #0073aa; }
+        .cell.cleared { color: #ccc; text-decoration: line-through; background: #f9f9f9; pointer-events: none; }
+        
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { 
+            padding: 15px; font-size: 0.9rem; font-weight: bold; cursor: pointer; 
+            border: none; border-radius: 10px; background-color: #f0f0f0; 
+            transition: transform 0.1s, background 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+        #add-btn { background-color: #000; color: #fff; }
+        #add-btn:hover { background-color: #333; }
+
+        #message { margin-top: 15px; font-weight: bold; min-height: 1.2em; }
+    </style>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="es"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Pengu Number Match&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>/* --- ESTILO COHERENTE CON SUDOKU --- */</p>
-<p class="p1"><span class="Apple-converted-space">        </span>* { box-sizing: border-box; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>body {<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex; justify-content: center; align-items: flex-start;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>min-height: 100vh; margin: 0; padding: 20px; background-color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-family: 'Segoe UI', sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#game-container { text-align: center; width: 100%; max-width: 400px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>h2 { margin-bottom: 10px; font-size: 2rem; font-weight: bold; }</p>
-<p class="p2"><span class="Apple-converted-space">        </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>#grid {<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: grid;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>grid-template-columns: repeat(9, 1fr);<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: 3px solid #000;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #000;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>gap: 2px;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.cell {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background: #fff; aspect-ratio: 1/1;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex; justify-content: center; align-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1.2rem; cursor: pointer; font-weight: bold;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>transition: background 0.2s;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.cell.empty { color: transparent; background: #f9f9f9; cursor: default; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.cell.selected { background-color: #e3e8ff; color: #0073aa; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>.cell.cleared { color: #ccc; text-decoration: line-through; background: #f0f0f0; pointer-events: none; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.controls { display: flex; justify-content: center; gap: 10px; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>button {<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 12px 20px; font-weight: bold; cursor: pointer;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: none; border-radius: 8px; background-color: #f0f0f0;<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>button:hover { background-color: #ddd; }</p>
-<p class="p1"><span class="Apple-converted-space">        </span>#add-btn { background-color: #0073aa; color: white; }</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>#message { margin-top: 15px; font-weight: bold; color: green; }</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="game-container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;h2&gt;Number Match&lt;/h2&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="grid"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="controls"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;button id="add-btn" onclick="addNumbers()"&gt;AÑADIR NÚMEROS&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="resetGame()"&gt;REINICIAR&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;p id="message"&gt;&lt;/p&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let numbers = [];</p>
-<p class="p1"><span class="Apple-converted-space">        </span>let selectedIndex = null;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>// Iniciar con una secuencia aleatoria de números</p>
-<p class="p1"><span class="Apple-converted-space">        </span>function initGame() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>numbers = [];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>for (let i = 0; i &lt; 27; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>render();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function render() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const grid = document.getElementById('grid');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>grid.innerHTML = '';</p>
-<p class="p1"><span class="Apple-converted-space">            </span>numbers.forEach((num, index) =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const div = document.createElement('div');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>div.className = 'cell';</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (num.status === 'cleared') div.classList.add('cleared');</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (selectedIndex === index) div.classList.add('selected');</p>
-<p class="p2"><span class="Apple-converted-space">                </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>div.textContent = num.val;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>div.onclick = () =&gt; handleSelect(index);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>grid.appendChild(div);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>checkWin();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function handleSelect(index) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (numbers[index].status === 'cleared') return;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (selectedIndex === null) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>selectedIndex = index;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else if (selectedIndex === index) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>selectedIndex = null;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (canMatch(selectedIndex, index)) {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>numbers[selectedIndex].status = 'cleared';</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>numbers[index].status = 'cleared';</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>selectedIndex = null;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>} else {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>selectedIndex = index; // Cambiar selección al nuevo</p>
-<p class="p1"><span class="Apple-converted-space">                </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>render();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function canMatch(idx1, idx2) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const val1 = numbers[idx1].val;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const val2 = numbers[idx2].val;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>// Regla: Iguales o suman 10</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (val1 === val2 || val1 + val2 === 10) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>return areAdjacent(idx1, idx2);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>return false;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function areAdjacent(idx1, idx2) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let start = Math.min(idx1, idx2);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>let end = Math.max(idx1, idx2);</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">            </span>// Verificar si están seguidos ignorando los "cleared"</p>
-<p class="p1"><span class="Apple-converted-space">            </span>for (let i = start + 1; i &lt; end; i++) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>if (numbers[i].status === 'active') return false;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">            </span>return true;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function addNumbers() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const currentActive = numbers.filter(n =&gt; n.status === 'active');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const newBatch = currentActive.map(n =&gt; ({ val: n.val, status: 'active' }));</p>
-<p class="p1"><span class="Apple-converted-space">            </span>numbers = [...numbers, ...newBatch];</p>
-<p class="p1"><span class="Apple-converted-space">            </span>render();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function checkWin() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (numbers.every(n =&gt; n.status === 'cleared')) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>document.getElementById('message').innerText = "¡FELICIDADES! HAS GANADO";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function resetGame() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>document.getElementById('message').innerText = "";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>selectedIndex = null;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>initGame();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>initGame();</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+
+    <div id="game-container">
+        <h2>Number Match</h2>
+        <div id="grid"></div>
+        <div class="controls">
+            <button id="add-btn" onclick="addNumbers()">AÑADIR FILAS</button>
+            <button onclick="resetGame()">REINICIAR</button>
+        </div>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        let numbers = [];
+        let selectedIndex = null;
+
+        // Iniciar el juego
+        function initGame() {
+            numbers = [];
+            // Generar 27 números iniciales (3 filas de 9)
+            for (let i = 0; i < 27; i++) {
+                numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
+            }
+            render();
+        }
+
+        function render() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            numbers.forEach((num, index) => {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                if (num.status === 'cleared') div.classList.add('cleared');
+                if (selectedIndex === index) div.classList.add('selected');
+                
+                div.textContent = num.status === 'cleared' ? num.val : num.val;
+                div.onclick = () => handleSelect(index);
+                grid.appendChild(div);
+            });
+            checkWin();
+        }
+
+        function handleSelect(index) {
+            if (numbers[index].status === 'cleared') return;
+
+            if (selectedIndex === null) {
+                selectedIndex = index;
+            } else if (selectedIndex === index) {
+                selectedIndex = null;
+            } else {
+                if (canMatch(selectedIndex, index)) {
+                    numbers[selectedIndex].status = 'cleared';
+                    numbers[index].status = 'cleared';
+                    selectedIndex = null;
+                    document.getElementById('message').innerText = "¡Bien!";
+                    setTimeout(() => document.getElementById('message').innerText = "", 1000);
+                } else {
+                    selectedIndex = index;
+                }
+            }
+            render();
+        }
+
+        function canMatch(idx1, idx2) {
+            const val1 = numbers[idx1].val;
+            const val2 = numbers[idx2].val;
+
+            // Regla: Son iguales o suman 10
+            if (val1 === val2 || val1 + val2 === 10) {
+                return areAdjacent(idx1, idx2);
+            }
+            return false;
+        }
+
+        function areAdjacent(idx1, idx2) {
+            let start = Math.min(idx1, idx2);
+            let end = Math.max(idx1, idx2);
+
+            // Verificamos si no hay números activos entre las dos selecciones
+            for (let i = start + 1; i < end; i++) {
+                if (numbers[i].status === 'active') return false;
+            }
+            return true;
+        }
+
+        function addNumbers() {
+            // Se duplican los números que aún están activos (regla clásica)
+            const currentActive = numbers.filter(n => n.status === 'active');
+            if (currentActive.length === 0) return;
+            
+            const newBatch = currentActive.map(n => ({ val: n.val, status: 'active' }));
+            numbers = [...numbers, ...newBatch];
+            render();
+        }
+
+        function checkWin() {
+            const anyActive = numbers.some(n => n.status === 'active');
+            if (!anyActive && numbers.length > 0) {
+                document.getElementById('message').innerText = "¡TABLERO LIMPIO! GANASTE";
+                document.getElementById('message').style.color = "green";
+            }
+        }
+
+        function resetGame() {
+            if(confirm("¿Reiniciar el juego?")) {
+                document.getElementById('message').innerText = "";
+                selectedIndex = null;
+                initGame();
+            }
+        }
+
+        // Ejecutar al cargar
+        window.onload = initGame;
+    </script>
 </body>
 </html>
