@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pengu Numerama</title>
     <style>
-        /* --- ESTILOS CLONADOS EXACTAMENTE DE TU SUDOKU suministrado --- */
+        /* --- ESTILOS CLONADOS DE PENGU SUDOKU --- */
         * { box-sizing: border-box; }
         body { 
             display: flex; 
@@ -14,51 +14,49 @@
             min-height: 100vh; 
             margin: 0; 
             padding-top: 20px;
-            background-color: #ffffff; /* Fondo blanco */
+            background-color: #ffffff; /* */
         }
-        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; } /* Fuente */
+        #game-container { font-family: 'Segoe UI', sans-serif; text-align: center; max-width: 380px; width: 100%; } /* */
 
         #grid { 
             display: grid; 
             grid-template-columns: repeat(9, 1fr); 
-            /* SE ELIMINÓ FIXED ASPECT-RATIO Y TEMPLATE-ROWS para permitir que el Numerama crezca */
-            border: 3px solid #000; /* Borde exterior */
+            border: 3px solid #000; /* */
             width: 100%; 
-            background-color: #000; /* Fondo negro */
+            background-color: #000; /* */
             overflow: hidden;
         }
 
-        /* Estilo exacto para la selección de niveles del Sudoku suministrado */
+        /* Estilo para la selección de niveles */
         #grid.no-grid {
             grid-template-columns: repeat(3, 1fr) !important;
             grid-template-rows: repeat(3, 1fr) !important;
-            aspect-ratio: 1 / 1; /* Mantenido para selección de nivel */
+            aspect-ratio: 1 / 1; /* */
             background-color: #000 !important; 
-            gap: 3px; 
+            gap: 3px; /* */
         }
 
-        /* Botones de nivel exactos del Sudoku suministrado */
         .level-pick {
-            background: #fff;
+            background: #fff; /* */
             width: 100%;
             height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3rem !important; /* Tamaño de fuente */
-            font-weight: bold;
-            color: #000;
+            font-size: 3rem !important; /* */
+            font-weight: bold; /* */
+            color: #000; 
             cursor: pointer;
             border: none;
         }
-        .level-pick:hover { background-color: #e3e8ff; } /* Color de hover */
+        .level-pick:hover { background-color: #e3e8ff; } /* */
 
         .cell {
-            background: #fff; /* Celdas blancas */
+            background: #fff; 
             width: 100%; 
-            aspect-ratio: 1 / 1; /* Mantiene las celdas cuadradas. Se aplica al contenido para que el grid crezca */
-            border: 0.5px solid #ccc; /* Líneas finas internas */
-            font-size: 1.2rem; /* Tamaño de fuente de celda */
+            aspect-ratio: 1 / 1; 
+            border: 0.5px solid #ccc; /* */
+            font-size: 1.2rem; 
             display: flex; 
             justify-content: center; 
             align-items: center;
@@ -66,30 +64,31 @@
             font-weight: bold;
         }
 
-        /* Colores de estado conservados de Numerama, compatibles con la estética */
+        /* Colores de estado sincronizados */
         .cell.selected { background-color: #e3e8ff; color: #0073aa; }
         .cell.cleared { 
-            background-color: #f0f0f0 !important; /* Color de fondo tachado del Sudoku suministrado */
+            background-color: #f0f0f0 !important; /* */
             color: #ccc !important; 
             text-decoration: line-through; 
             pointer-events: none; 
         }
 
-        /* Botones idénticos a Sudoku suministrado */
-        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; } /* Márgenes */
+        /* Botones idénticos a las imágenes */
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 20px; }
         .controls button { 
-            padding: 10px 15px; /* Padding */
+            padding: 10px 15px; 
             cursor: pointer; 
-            font-weight: bold;
+            font-weight: bold; /* */
             border: none; 
-            border-radius: 5px; /* Bordes redondeados */
-            background-color: #f0f0f0; /* Color de botones */
+            border-radius: 5px; /* */
+            background-color: #f0f0f0; /* */
             font-family: 'Segoe UI', sans-serif;
+            text-transform: uppercase;
         }
-        .controls button:hover { background-color: #e0e0e0; } /* Hover de botones */
+        .controls button:hover { background-color: #e0e0e0; }
         
-        #message { margin-top: 15px; font-weight: bold; } /* Márgenes */
-        .hidden-element { display: none !important; } /* Clase oculta */
+        #message { margin-top: 15px; font-weight: bold; }
+        .hidden-element { display: none !important; }
     </style>
 </head>
 <body>
@@ -105,12 +104,10 @@
     </div>
 
     <script>
-        /* --- LÓGICA DE NUMERAMA (NO MODIFICADA) --- */
         let numbers = [];
         let selectedIndex = null;
         const COLS = 9;
 
-        // Inicialización idéntica a Sudoku suministrado
         function showLevelSelection() {
             const grid = document.getElementById('grid');
             if(!grid) return;
@@ -136,6 +133,7 @@
             document.getElementById('add-btn').classList.remove('hidden-element');
             
             numbers = [];
+            // Empezar con filas según nivel
             let initialCount = 18 + (lv * 9); 
             for (let i = 0; i < initialCount; i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
@@ -161,6 +159,7 @@
 
         function handleSelect(index) {
             if (numbers[index].status === 'cleared') return;
+
             if (selectedIndex === null) {
                 selectedIndex = index;
             } else if (selectedIndex === index) {
@@ -170,6 +169,8 @@
                     numbers[selectedIndex].status = 'cleared';
                     numbers[index].status = 'cleared';
                     selectedIndex = null;
+                    document.getElementById('message').innerText = "¡Bien!";
+                    setTimeout(() => document.getElementById('message').innerText = "", 800);
                 } else {
                     selectedIndex = index;
                 }
@@ -180,7 +181,11 @@
         function isMatchPossible(idx1, idx2) {
             const v1 = numbers[idx1].val;
             const v2 = numbers[idx2].val;
-            if (v1 === v2 || v1 + v2 === 10) return checkPath(idx1, idx2);
+
+            // Regla: Iguales o suman 10
+            if (v1 === v2 || v1 + v2 === 10) {
+                return checkPath(idx1, idx2);
+            }
             return false;
         }
 
@@ -190,30 +195,44 @@
             const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
             const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
 
-            let pathClear = true;
+            // 1. Camino de "Serpiente" (Consecutivos ignorando vacíos)
+            let snakeClear = true;
             for (let i = start + 1; i < end; i++) {
-                if (numbers[i].status === 'active') { pathClear = false; break; }
+                if (numbers[i].status === 'active') {
+                    snakeClear = false;
+                    break;
+                }
             }
-            if (pathClear) return true;
+            if (snakeClear) return true;
 
+            // 2. Camino Vertical
             if (c1 === c2) {
-                pathClear = true;
+                let verticalClear = true;
                 for (let i = start + COLS; i < end; i += COLS) {
-                    if (numbers[i].status === 'active') { pathClear = false; break; }
+                    if (numbers[i].status === 'active') {
+                        verticalClear = false;
+                        break;
+                    }
                 }
-                if (pathClear) return true;
+                if (verticalClear) return true;
             }
 
+            // 3. Camino Diagonal
             if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
-                pathClear = true;
-                const rowStep = r2 > r1 ? 1 : -1;
-                const colStep = c2 > c1 ? 1 : -1;
-                const step = (rowStep * COLS) + colStep;
+                let diagonalClear = true;
+                const rowDir = r2 > r1 ? 1 : -1;
+                const colDir = c2 > c1 ? 1 : -1;
+                const step = (rowDir * COLS) + colDir;
+
                 for (let i = idx1 + step; i !== idx2; i += step) {
-                    if (numbers[i].status === 'active') { pathClear = false; break; }
+                    if (numbers[i].status === 'active') {
+                        diagonalClear = false;
+                        break;
+                    }
                 }
-                if (pathClear) return true;
+                if (diagonalClear) return true;
             }
+
             return false;
         }
 
@@ -226,14 +245,12 @@
 
         function checkWin() {
             if (numbers.length > 0 && numbers.every(n => n.status === 'cleared')) {
-                const msg = document.getElementById('message');
-                msg.innerText = "¡TABLERO COMPLETADO!";
-                msg.style.color = "green";
+                document.getElementById('message').innerText = "¡TABLERO COMPLETADO!";
+                document.getElementById('message').style.color = "green";
             }
         }
 
-        // Iniciar con la selección de nivel al cargar. Idéntico a Sudoku suministrado
-        window.addEventListener('DOMContentLoaded', showLevelSelection); 
+        window.addEventListener('DOMContentLoaded', showLevelSelection);
     </script>
 </body>
 </html>
