@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pengu Numerama</title>
     <style>
-        /* --- ESTILO ACTUALIZADO SEGÚN IMAGEN --- */
+        /* --- ESTILO REPLICADO DE LA IMAGEN --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body { 
@@ -14,9 +14,9 @@
             align-items: flex-start; 
             min-height: 100vh; 
             margin: 0; 
-            padding: 20px; 
-            background-color: #ffffff; /* Fondo blanco limpio */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 40px 20px; 
+            background-color: #ffffff; 
+            font-family: 'Inter', -apple-system, sans-serif;
         }
 
         #game-container { 
@@ -25,22 +25,29 @@
             max-width: 400px; 
         }
 
+        /* Título exacto de la imagen */
         h2 { 
-            margin: 0 0 20px 0; 
-            font-size: 1.8rem; 
+            margin: 0 0 30px 0; 
+            font-size: 2.2rem; 
             font-weight: 800; 
             color: #000; 
+            letter-spacing: -1px;
         }
 
-        /* Cuadrícula con líneas finas */
+        /* Grilla con bordes gruesos y definidos */
         #grid { 
             display: grid; 
             grid-template-columns: repeat(9, 1fr); 
-            border: 2px solid #000; /* Borde exterior algo más marcado */
+            border: 4px solid #000; /* Borde exterior grueso */
             background-color: #000; 
-            gap: 1px; /* Gap mínimo para líneas internas muy finas */
-            margin-bottom: 25px;
-            overflow: hidden;
+            gap: 2px; /* Líneas internas sólidas */
+            margin-bottom: 30px;
+        }
+
+        /* Estilo de nivel (3x3) igual a la imagen */
+        #grid.no-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 4px; 
         }
 
         .cell {
@@ -49,71 +56,51 @@
             display: flex; 
             justify-content: center; 
             align-items: center;
-            font-size: 1.4rem; 
+            font-size: 2.5rem; /* Números grandes y bold */
             cursor: pointer; 
-            font-weight: 700;
+            font-weight: 800;
+            color: #000;
             user-select: none; 
-            transition: background 0.1s ease;
         }
 
-        /* Estado seleccionado: Azul muy suave */
-        .cell.selected { 
-            background-color: #e3e8ff; 
-            color: #0073aa; 
-        }
+        /* Estilos específicos de Numerama */
+        .game-cell { font-size: 1.4rem; } /* Más pequeños cuando hay muchos */
+        .cell.selected { background-color: #e3e8ff; color: #0073aa; }
+        .cell.cleared { color: #d1d1d1; text-decoration: line-through; pointer-events: none; }
 
-        /* Estado tachado: Gris claro con línea */
-        .cell.cleared { 
-            color: #d1d1d1; 
-            text-decoration: line-through; 
-            background: #fdfdfd; 
-            pointer-events: none; 
-        }
-
-        /* Botones en gris claro estilo moderno */
+        /* Botones idénticos a la imagen */
         .controls { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 12px; 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
         }
 
         button { 
-            padding: 14px; 
-            font-size: 0.85rem; 
-            font-weight: 700; 
+            padding: 16px 24px; 
+            font-size: 0.9rem; 
+            font-weight: 800; 
             cursor: pointer; 
             border: none; 
             border-radius: 8px; /* Esquinas ligeramente redondeadas */
-            background-color: #eeeeee; /* Gris muy claro */
+            background-color: #eeeeee; /* Gris claro exacto */
             color: #000;
             text-transform: uppercase;
-            transition: background 0.2s;
+            letter-spacing: 0.5px;
         }
 
-        button:hover { 
-            background-color: #e0e0e0; 
-        }
+        button:active { transform: scale(0.98); }
 
-        button:active { 
-            transform: translateY(1px); 
-        }
-
-        #message { 
-            margin-top: 20px; 
-            font-weight: 700; 
-            color: #333; 
-            min-height: 1.5em; 
-        }
+        #message { margin-top: 20px; font-weight: 800; font-size: 1.1rem; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        <h2>Pengu Numerama</h2>
-        <div id="grid"></div>
+        <h2 id="game-title">Pengu Numerama</h2>
+        <div id="grid" class="no-grid"></div>
         <div class="controls">
-            <button onclick="addNumbers()">Añadir Filas</button>
-            <button onclick="resetGame()">Reiniciar</button>
+            <button id="action-btn" onclick="addNumbers()">Añadir Filas</button>
+            <button onclick="showLevelSelection()">Elegir Nivel</button>
         </div>
         <p id="message"></p>
     </div>
@@ -123,11 +110,31 @@
         let selectedIndex = null;
         const COLS = 9;
 
-        // Iniciar el tablero
-        function initGame() {
+        function showLevelSelection() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.classList.add('no-grid');
+            document.getElementById('game-title').innerText = "Pengu Numerama";
+            document.getElementById('action-btn').style.display = 'none';
+
+            for (let lv = 1; lv <= 9; lv++) {
+                const div = document.createElement('div');
+                div.className = 'cell';
+                div.textContent = lv;
+                div.onclick = () => startLevel(lv);
+                grid.appendChild(div);
+            }
+        }
+
+        function startLevel(lv) {
+            const grid = document.getElementById('grid');
+            grid.classList.remove('no-grid');
+            document.getElementById('game-title').innerText = `Nivel ${lv}`;
+            document.getElementById('action-btn').style.display = 'block';
+            
             numbers = [];
-            // Generar 27 números aleatorios iniciales
-            for (let i = 0; i < 27; i++) {
+            let count = 18 + (lv * 9);
+            for (let i = 0; i < count; i++) {
                 numbers.push({ val: Math.floor(Math.random() * 9) + 1, status: 'active' });
             }
             render();
@@ -138,7 +145,81 @@
             grid.innerHTML = '';
             numbers.forEach((num, index) => {
                 const div = document.createElement('div');
-                div.className = 'cell';
+                div.className = 'cell game-cell';
                 if (num.status === 'cleared') div.classList.add('cleared');
                 if (selectedIndex === index) div.classList.add('selected');
-                div.textContent
+                div.textContent = num.val;
+                div.onclick = () => handleSelect(index);
+                grid.appendChild(div);
+            });
+        }
+
+        function handleSelect(index) {
+            if (numbers[index].status === 'cleared') return;
+            if (selectedIndex === null) {
+                selectedIndex = index;
+            } else if (selectedIndex === index) {
+                selectedIndex = null;
+            } else {
+                if (checkMatch(selectedIndex, index)) {
+                    numbers[selectedIndex].status = 'cleared';
+                    numbers[index].status = 'cleared';
+                    selectedIndex = null;
+                } else {
+                    selectedIndex = index;
+                }
+            }
+            render();
+        }
+
+        function checkMatch(idx1, idx2) {
+            const v1 = numbers[idx1].val;
+            const v2 = numbers[idx2].val;
+            if (v1 === v2 || v1 + v2 === 10) return isPathClear(idx1, idx2);
+            return false;
+        }
+
+        function isPathClear(idx1, idx2) {
+            const start = Math.min(idx1, idx2);
+            const end = Math.max(idx1, idx2);
+            const r1 = Math.floor(idx1 / COLS), c1 = idx1 % COLS;
+            const r2 = Math.floor(idx2 / COLS), c2 = idx2 % COLS;
+
+            // Horizontal / Serpiente
+            let clear = true;
+            for (let i = start + 1; i < end; i++) {
+                if (numbers[i].status === 'active') { clear = false; break; }
+            }
+            if (clear) return true;
+
+            // Vertical
+            if (c1 === c2) {
+                clear = true;
+                for (let i = start + COLS; i < end; i += COLS) {
+                    if (numbers[i].status === 'active') { clear = false; break; }
+                }
+                if (clear) return true;
+            }
+
+            // Diagonal
+            if (Math.abs(r1 - r2) === Math.abs(c1 - c2)) {
+                clear = true;
+                const step = (r2 > r1 ? COLS : -COLS) + (c2 > c1 ? 1 : -1);
+                for (let i = idx1 + step; i !== idx2; i += step) {
+                    if (numbers[i].status === 'active') { clear = false; break; }
+                }
+                if (clear) return true;
+            }
+            return false;
+        }
+
+        function addNumbers() {
+            const actives = numbers.filter(n => n.status === 'active');
+            numbers = [...numbers, ...actives.map(n => ({ val: n.val, status: 'active' }))];
+            render();
+        }
+
+        window.onload = showLevelSelection;
+    </script>
+</body>
+</html>
