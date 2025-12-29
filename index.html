@@ -185,6 +185,7 @@
     document.getElementById('end-btn').classList.remove('hidden-element');
     document.getElementById('exit-btn').classList.remove('hidden-element');
     document.getElementById('stats').classList.remove('hidden-element');
+          selectedIndex = null;
     numbers = []; totalScore = 0; addRowsRemaining = 5; updateUI();
     let rows = lv <= 3 ? 3 : lv <= 6 ? 4 : 5;
     for (let i = 0; i < (rows * COLS); i++) {
