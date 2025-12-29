@@ -16,7 +16,7 @@
     align-items: center; /* Alineación vertical */
     margin-bottom: 10px; 
     font-weight: bold; 
-    font-size: 1.4rem;  /* Tamaño más grande (antes era 0.9) */
+    font-size: 1.2rem;  /* Tamaño más grande (antes era 0.9) */
     border: 2px solid #000; 
     padding: 10px 15px; /* Más espacio interno */
     background-color: #f9f9f9; /* Un fondo sutil para que resalte */
@@ -68,7 +68,7 @@
         <h2 id="game-title">Pengu Numerama</h2>
         
         <div class="stats-bar hidden-element" id="stats">
-            <span>PUNTOS: <span id="score-val">0</span></span>
+            <span>Puntos: <span id="score-val">0</span></span>
         </div>
 
         <div id="grid"></div>
@@ -85,13 +85,13 @@
 
 <button id="exit-btn" class="hidden-element" onclick="window.showLevelSelection()" style="margin-top: 15px; width: 100%;">SALIR DEL JUEGO</button>
 
-<footer>Desarrollado por Pengu - Version 1.4.9</footer>
+<footer>Desarrollado por Pengu - Version 1.4.10</footer>
     </div>
 
     <div id="game-over-overlay">
         <div class="popup">
             <h2 style="margin:0">¡FIN DEL JUEGO!</h2>
-            <p>Puntuación Final:</p>
+            <p>PUNTAJE FINAL:</p>
             <h1 id="final-score" style="margin:10px 0; color:#0073aa;">0</h1>
             <input type="text" id="player-name" placeholder="TU NOMBRE" maxlength="30" style="text-transform: uppercase; font-size: 16px;">
             <button id="firebase-save-btn" onclick="window.sendToFirebase()" style="background:#000; color:#fff; width:100%">GUARDAR Y SALIR</button>
